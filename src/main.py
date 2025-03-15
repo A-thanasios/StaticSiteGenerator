@@ -5,8 +5,8 @@ from textnode import TextNode, TextType
 
 def main():
     text_node = TextNode('sds',
-                         TextType.bold_text,
-                         'https://www.oimahbalfs.org' )
+                         TextType.BOLD,
+                         'https://www.oimahbalfs.org')
 
     grandchild1 = LeafNode("b", "Bold text")
     grandchild2 = LeafNode(None, "Normal text")

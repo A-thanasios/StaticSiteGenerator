@@ -18,5 +18,6 @@ class TestHTMLNode(unittest.TestCase):
         expected = "HTMLNode(a, Click me, None, {'href': 'https://example.com', 'target': '_blank'})"
         self.assertEqual(node.__repr__(), expected)
 
+
 if __name__ == "__main__":
     unittest.main()

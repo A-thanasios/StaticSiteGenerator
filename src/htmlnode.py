@@ -1,3 +1,6 @@
+from textnode import TextNode, TextType
+
+
 class HTMLNode:
     def __init__(self, tag: str =None, value: str =None, children: list =None, props: dict =None):
         self.tag = tag
