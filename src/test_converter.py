@@ -1,6 +1,6 @@
 import unittest
 
-from converter import text_node_to_html_node, split_nodes_delimiter
+from converter import text_node_to_html_node, split_nodes_delimiter, extract_markdown_images
 from textnode import TextNode, TextType
 
 
@@ -246,3 +246,15 @@ class TestConverter(unittest.TestCase):
         self.assertEqual(italic_nodes[4].text_type, TextType.TEXT)
         self.assertEqual(italic_nodes[5].text, "code")
         self.assertEqual(italic_nodes[5].text_type, TextType.CODE)
+
+        # Test cases for extract_markdown_images(text)
+
+        def test_extract_markdown_images(self):
+            matches = extract_markdown_images(
+                ("This is text with an ![image](https://i.imgur.com/zjjcJKZ.png)",)
+            )
+            self.assertListEqual([("image", "https://i.imgur.com/zjjcJKZ.png")], matches)
+
+        # Test cases for extract_markdown_links(text)
+
+            #TODO:

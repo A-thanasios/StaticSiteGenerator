@@ -1,3 +1,4 @@
+import  re
 from leafnode import LeafNode
 from textnode import TextNode, TextType
 
@@ -56,3 +57,23 @@ def split_nodes_delimiter(old_nodes, delimiter, text_type):
         new_nodes.extend(text_nodes)
 
     return new_nodes
+
+def extract_markdown_images(text :tuple):
+    lst = []
+
+    for group in text:
+        print(group)
+        alt_text, url = re.findall(r'!\[(.*?)\]\((.*?)\)', group)
+        lst.append((alt_text, url))
+
+    return lst
+
+def extract_markdown_links(text :tuple):
+    lst = []
+
+    for group in text:
+        print(group)
+        alt_text, url = re.findall(r'\[(.*?)\]\((.*?)\)', group)
+        lst.append((alt_text, url))
+
+    return lst
