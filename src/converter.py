@@ -3,6 +3,10 @@ from leafnode import LeafNode
 from textnode import TextNode, TextType
 
 
+def markdown_to_blocks(markdown):
+    blocks = markdown.split('\n\n')
+
+
 def text_node_to_html_node(text_node):
     if text_node.text_type not in TextType:
         raise Exception('Not valid text type')
@@ -23,6 +27,16 @@ def text_node_to_html_node(text_node):
         case _:
             raise Exception(f'"{text_node.text_type}" is not valid text type')
 
+def text_to_textnodes(text):
+    lst = [TextNode(text, TextType.TEXT)]
+
+    lst = (split_nodes_delimiter(lst, '**', TextType.BOLD))
+    lst = (split_nodes_delimiter(lst, '_', TextType.ITALIC))
+    lst = (split_nodes_delimiter(lst, '`', TextType.CODE))
+    lst = (split_nodes_image(lst))
+    lst = (split_nodes_link(lst))
+
+    return lst
 def split_nodes_delimiter(old_nodes, delimiter, text_type):
     new_nodes = []
 
@@ -58,22 +72,60 @@ def split_nodes_delimiter(old_nodes, delimiter, text_type):
 
     return new_nodes
 
-def extract_markdown_images(text :tuple):
-    lst = []
+def extract_markdown_images(text :str):
+    return re.findall(r'!\[(.*?)\]\((.*?)\)', text)
 
-    for group in text:
-        print(group)
-        alt_text, url = re.findall(r'!\[(.*?)\]\((.*?)\)', group)
-        lst.append((alt_text, url))
 
-    return lst
+def extract_markdown_links(text :str):
+    return re.findall(r'\[(.*?)\]\((.*?)\)', text)
 
-def extract_markdown_links(text :tuple):
-    lst = []
+def split_nodes_image(old_nodes):
+    new_nodes = []
 
-    for group in text:
-        print(group)
-        alt_text, url = re.findall(r'\[(.*?)\]\((.*?)\)', group)
-        lst.append((alt_text, url))
+    for old_node in old_nodes:
+        if old_node.text_type != TextType.TEXT:
+            new_nodes.append(old_node)
+            continue
+        images_tuple = extract_markdown_images(old_node.text)
 
-    return lst
+        if len(images_tuple) == 0:
+            new_nodes.append(old_node)
+            continue
+
+        rest = old_node.text
+        while len(images_tuple) > 0:
+
+            before, rest = rest.split(f'![{images_tuple[0][0]}]({images_tuple[0][1]})', 1)
+            new_nodes.append(TextNode(before, TextType.TEXT))
+            new_nodes.append(TextNode(images_tuple[0][0], TextType.IMAGE, images_tuple[0][1]))
+
+            images_tuple.remove(images_tuple[0])
+
+
+    return new_nodes
+
+def split_nodes_link(old_nodes):
+    new_nodes = []
+
+    for old_node in old_nodes:
+        if old_node.text_type != TextType.TEXT:
+            new_nodes.append(old_node)
+            continue
+        links_tuple = extract_markdown_links(old_node.text)
+
+
+        if len(links_tuple) == 0:
+            new_nodes.append(old_node)
+            continue
+
+        rest = old_node.text
+        while len(links_tuple) > 0:
+
+            before, rest = rest.split(f'[{links_tuple[0][0]}]({links_tuple[0][1]})', 1)
+            new_nodes.append(TextNode(before, TextType.TEXT))
+            new_nodes.append(TextNode(links_tuple[0][0], TextType.LINK, links_tuple[0][1]))
+
+            links_tuple.remove(links_tuple[0])
+
+
+    return new_nodes
