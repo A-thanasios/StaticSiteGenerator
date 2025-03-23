@@ -1,27 +1,35 @@
 from leafnode import LeafNode
 from parentnode import ParentNode
-from converter import split_nodes_delimiter, extract_markdown_images, extract_markdown_links, split_nodes_link
-from src.converter import split_nodes_image, text_to_textnodes
+from converter import split_nodes_delimiter, extract_markdown_images, extract_markdown_links, split_nodes_link, \
+    markdown_to_blocks
+from src.converter import split_nodes_image, text_to_textnodes, block_to_block_type
 from textnode import TextNode, TextType
 
 
 def main():
-    text_node = TextNode('This is text with a **bolded phrase** in the middle',
-                         TextType.TEXT,
-                         )
+    md = """
+    This is **bolded** paragraph
+
+    ```This is code```
+
+    This is another paragraph with _italic_ text and `code` here
+    This is the same paragraph on a new line
+
+    - This is a list
+    - with items
+
+    1. This is an ordered list
+    2. This is an ordered list too
+    3bootdev run 719ee1ae-19b6-4572-9b40-c8530dcbfa4f -s. This is an ordered list too too
+    """
+    blocks = markdown_to_blocks(md)
+    block = blocks[-1]
 
 
-    node = TextNode(
-    "This is text with an ![image](https://i.imgur.com/zjjcJKZ.png) and another ![second image](https://i.imgur.com/3elNhQu.png)",
-    TextType.TEXT,
-    )
-#print(extract_markdown_images(text))
-# [("rick roll", "https://i.imgur.com/aKaOqIh.gif"), ("obi wan", "https://i.imgur.com/fJRm4Vk.jpeg")]
 
-#print(split_nodes_image([node]))
-# [("to boot dev", "https://www.boot.dev"), ("to youtube", "https://www.youtube.com/@bootdotdev")]
+    for block in blocks:
+        print(block + '\n' + str(block_to_block_type(block)) + '\n')
 
-    text = 'This is **text** with an _italic_ word and a `code block` and an ![obi wan image](https://i.imgur.com/fJRm4Vk.jpeg) and a [link](https://boot.dev)'
+    #print(block + '\n' + str(block_to_block_type(block)))
 
-    print(text_to_textnodes(text))
 main()

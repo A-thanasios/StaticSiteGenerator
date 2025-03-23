@@ -1,7 +1,7 @@
 import unittest
 
 from converter import text_node_to_html_node, split_nodes_delimiter, extract_markdown_images, split_nodes_image, \
-    split_nodes_link
+    split_nodes_link, markdown_to_blocks
 from textnode import TextNode, TextType
 
 
@@ -297,4 +297,26 @@ class TestConverter(unittest.TestCase):
                 ),
             ],
             new_nodes,
+        )
+
+    # To blocks
+
+    def test_markdown_to_blocks(self):
+        md = """
+    This is **bolded** paragraph
+
+    This is another paragraph with _italic_ text and `code` here
+    This is the same paragraph on a new line
+
+    - This is a list
+    - with items
+    """
+        blocks = markdown_to_blocks(md)
+        self.assertEqual(
+            blocks,
+            [
+                "This is **bolded** paragraph",
+                "This is another paragraph with _italic_ text and `code` here\nThis is the same paragraph on a new line",
+                "- This is a list\n- with items",
+            ],
         )

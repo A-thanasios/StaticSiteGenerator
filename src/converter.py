@@ -1,10 +1,67 @@
 import  re
+from enum import Enum
+
 from leafnode import LeafNode
 from textnode import TextNode, TextType
+
+class BlockType(Enum):
+    PARAGRAPH = 1
+    HEADING = 2
+    CODE = 3
+    QUOTE = 4
+    UNORDERED_LIST = 5
+    ORDERED_LIST = 6
 
 
 def markdown_to_blocks(markdown):
     blocks = markdown.split('\n\n')
+    new_blocks = []
+
+    for block in blocks:
+        new_block = ''
+        block = block.strip()
+        lines  = block.split('\n')
+
+        if len(lines) == 1:
+            new_block += lines[0]
+        else:
+            for line in lines:
+                if line != '':
+                    if lines[0] == line:
+                        new_block += line.strip()
+                    else:
+                        new_block += '\n' + line.strip()
+
+        if new_block != '':
+            new_blocks.append(new_block)
+
+    return new_blocks
+
+def block_to_block_type(block):
+    if  block[0] == '#':
+        return BlockType.HEADING
+    elif block[0:3] and block [-3:] == '```':
+        return BlockType.CODE
+    elif block[0] == '>':
+        for line in block:
+            if line != '>':
+                continue
+        return BlockType.QUOTE
+    elif block[0] == '-':
+        for line in block.split('\n'):
+            if line[0] != '-':
+                return BlockType.PARAGRAPH
+        return BlockType.UNORDERED_LIST
+    elif block[0].isdigit() and block[1] == '.':
+        n = 1
+        for line in block.split('\n'):
+            if not line[0].isdigit() or line[1] != '.' or line[0] != f'{n}':
+                return BlockType.PARAGRAPH
+            n += 1
+
+        return BlockType.ORDERED_LIST
+    else:
+        return BlockType.PARAGRAPH
 
 
 def text_node_to_html_node(text_node):
