@@ -1,7 +1,12 @@
 import  re
 from enum import Enum
+from unittest import case
+
+from uaclient.daemon import cleanup
 
 from leafnode import LeafNode
+from htmlnode import HTMLNode
+from parentnode import ParentNode
 from textnode import TextNode, TextType
 
 class BlockType(Enum):
@@ -13,26 +18,79 @@ class BlockType(Enum):
     ORDERED_LIST = 6
 
 
+def markdown_to_html_node(markdown):
+    htmlnodes = []
+    blocks = markdown_to_blocks(markdown)
+
+    for block in blocks:
+        block_type = block_to_block_type(block)
+
+
+        html_block = block_to_htmlnode(block, block_type)
+
+        htmlnodes.append(html_block)
+
+    return ParentNode('div', htmlnodes)
+
+def text_to_children(text):
+    children = []
+    textnodes = text_to_textnodes(text)
+    for textnode in textnodes:
+        children.append(text_node_to_html_node(textnode))
+    
+
+    return children
+
+
+def block_to_htmlnode(text, block_type):
+
+    match block_type:
+        case BlockType.HEADING:
+            markdown, clean_text = text.split(' ', 1)
+            level = len(markdown)
+            return ParentNode(f'h{level}', text_to_children(clean_text))
+
+        case BlockType.QUOTE:
+            markdown, clean_text = text.split(' ', 1)
+            return ParentNode('blockquote', text_to_children(clean_text))
+
+        case BlockType.UNORDERED_LIST:
+            markdown, clean_text = text.split(' ', 1)
+            nodes = []
+            for child in clean_text.split('\n- '):
+                nodes.append(LeafNode('li', child))
+            return ParentNode('ul', nodes)
+
+        case BlockType.ORDERED_LIST:
+            nodes = []
+            for child in text.split('\n'):
+                nodes.append(LeafNode('li', child.split('. ', 1)[1]))
+            return ParentNode('ol', nodes)
+
+        case BlockType.PARAGRAPH:
+            return ParentNode('p', text_to_children(text))
+
+        case BlockType.CODE:
+            return ParentNode('pre', [text_node_to_html_node(TextNode(text.split('```', 2)[1].lstrip('\n'), TextType.CODE))])
+
+
 def markdown_to_blocks(markdown):
     blocks = markdown.split('\n\n')
     new_blocks = []
 
     for block in blocks:
-        new_block = ''
-        block = block.strip()
-        lines  = block.split('\n')
+        block = block.strip()  # Always strip any leading/trailing whitespace
 
-        if len(lines) == 1:
-            new_block += lines[0]
-        else:
-            for line in lines:
-                if line != '':
-                    if lines[0] == line:
-                        new_block += line.strip()
-                    else:
-                        new_block += '\n' + line.strip()
+        if block_to_block_type(block) == BlockType.CODE:
+            new_blocks.append(block)
+            continue
 
-        if new_block != '':
+        # Process non-code blocks
+        lines = block.split('\n')
+        cleaned_lines = [line.strip() for line in lines if line.strip()]  # Remove empty lines
+        new_block = ' '.join(cleaned_lines)  # Concatenate cleaned lines
+
+        if new_block:
             new_blocks.append(new_block)
 
     return new_blocks
@@ -86,7 +144,6 @@ def text_node_to_html_node(text_node):
 
 def text_to_textnodes(text):
     lst = [TextNode(text, TextType.TEXT)]
-
     lst = (split_nodes_delimiter(lst, '**', TextType.BOLD))
     lst = (split_nodes_delimiter(lst, '_', TextType.ITALIC))
     lst = (split_nodes_delimiter(lst, '`', TextType.CODE))
