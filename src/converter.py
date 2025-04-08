@@ -1,4 +1,4 @@
-import  re
+import re
 from enum import Enum
 from unittest import case
 
@@ -16,6 +16,15 @@ class BlockType(Enum):
     QUOTE = 4
     UNORDERED_LIST = 5
     ORDERED_LIST = 6
+
+def extract_title(markdown):
+    first_block = markdown_to_blocks(markdown)[0]
+
+    if block_to_block_type(first_block) == BlockType.HEADING:
+        mark, text = first_block.split(' ', 1)
+        if len(mark) == 1:
+            return text
+    raise Exception('There is no title block')
 
 
 def markdown_to_html_node(markdown):
@@ -51,20 +60,24 @@ def block_to_htmlnode(text, block_type):
             return ParentNode(f'h{level}', text_to_children(clean_text))
 
         case BlockType.QUOTE:
-            markdown, clean_text = text.split(' ', 1)
-            return ParentNode('blockquote', text_to_children(clean_text))
+            clean_text = ''.join(text.split('>'))
+            return ParentNode('blockquote', text_to_children(clean_text.strip()))
 
         case BlockType.UNORDERED_LIST:
             markdown, clean_text = text.split(' ', 1)
             nodes = []
-            for child in clean_text.split('\n- '):
-                nodes.append(LeafNode('li', child))
+            for child in clean_text.split('- '):
+                nodes.append(ParentNode('li', text_to_children(child.strip())))
             return ParentNode('ul', nodes)
 
         case BlockType.ORDERED_LIST:
             nodes = []
-            for child in text.split('\n'):
-                nodes.append(LeafNode('li', child.split('. ', 1)[1]))
+            split_text = re.split(r'\d+\.\s', text)
+
+            # Create LeafNode for each match found
+            for item in split_text:
+                if item.strip():
+                    nodes.append(ParentNode('li', text_to_children(item.strip())))
             return ParentNode('ol', nodes)
 
         case BlockType.PARAGRAPH:
@@ -136,7 +149,7 @@ def text_node_to_html_node(text_node):
         case TextType.CODE:
             return LeafNode('code', text_node.text)
         case TextType.LINK:
-            return LeafNode('a', text_node.text, {'href': text_node.text})
+            return LeafNode('a', text_node.text, {'href': text_node.url})
         case TextType.IMAGE:
             return LeafNode('img', '',  {'src': text_node.url, 'alt': text_node.text})
         case _:
@@ -210,7 +223,8 @@ def split_nodes_image(old_nodes):
         while len(images_tuple) > 0:
 
             before, rest = rest.split(f'![{images_tuple[0][0]}]({images_tuple[0][1]})', 1)
-            new_nodes.append(TextNode(before, TextType.TEXT))
+            if before:
+                new_nodes.append(TextNode(before, TextType.TEXT))
             new_nodes.append(TextNode(images_tuple[0][0], TextType.IMAGE, images_tuple[0][1]))
 
             images_tuple.remove(images_tuple[0])
@@ -236,7 +250,9 @@ def split_nodes_link(old_nodes):
         while len(links_tuple) > 0:
 
             before, rest = rest.split(f'[{links_tuple[0][0]}]({links_tuple[0][1]})', 1)
-            new_nodes.append(TextNode(before, TextType.TEXT))
+            if before:
+                new_nodes.append(TextNode(before, TextType.TEXT))
+
             new_nodes.append(TextNode(links_tuple[0][0], TextType.LINK, links_tuple[0][1]))
 
             links_tuple.remove(links_tuple[0])

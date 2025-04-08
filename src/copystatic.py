@@ -1,22 +1,46 @@
 import os
 import shutil
 
+from converter import markdown_to_html_node, extract_title
 
-def make_public():
-    # delete content of public
-    shutil.rmtree('./public/', ignore_errors=True)
-    # copy whole directory static to public
-    static_files = find_files('./static/')
 
-    os.mkdir('./public')
+def generate_page(from_path, template_path, to_path):
+    print(f'Generating page {from_path} to {to_path} using {template_path}')
 
-    for file in static_files:
-        new_file = f'./public/{file.split('./static/', 1)[1]}'
-        print(os.path.split(new_file)[0])
-        if not os.path.isdir(os.path.split(new_file)[0]):
-            os.mkdir(os.path.split(new_file)[0])
-        if not os.path.exists(new_file):
-            shutil.copy(file, new_file)
+    with open(from_path, 'r') as markdown_file:
+        markdown = markdown_file.read()
+
+    with open(template_path, 'r') as template_file:
+        template = template_file.read()
+
+    htmlstring = markdown_to_html_node(markdown).to_html()
+    title = extract_title(markdown)
+    full_html = template.replace('{{ Title }}', title)
+    full_html = full_html.replace('{{ Content }}', htmlstring)
+    if not os.path.isdir(os.path.split(to_path)[0]):
+        os.makedirs(os.path.split(to_path)[0], exist_ok=True)
+
+    with open(to_path, 'w') as path_file:
+        path_file.write(full_html)
+
+def generate_pages_recursive(from_path, template_path, to_path):
+    files = find_files(from_path)
+    for file in files:
+        if file.endswith('.md'):
+            # Get the relative path from the content directory
+            relative_path = os.path.relpath(file, from_path)
+
+            # Create the output path by joining the destination directory with the relative path
+            output_path = os.path.join(to_path, relative_path)
+
+            # Replace the .md extension with .html
+            output_path = output_path.replace('.md', '.html')
+
+            # Make sure the output directory exists
+            os.makedirs(os.path.dirname(output_path), exist_ok=True)
+
+            # Generate the page
+            generate_page(file, template_path, output_path)
 
 def find_files(directory):
     files = []
@@ -28,3 +52,19 @@ def find_files(directory):
             files += find_files(path)
 
     return files
+
+def make_public():
+    # delete content of public
+    shutil.rmtree('./public/', ignore_errors=True)
+    # copy whole directory static to public
+    static_files = find_files('./static/')
+
+    os.mkdir('./public')
+
+    for file in static_files:
+        new_file = f'./public/{file.split('./static/', 1)[1]}'
+        if not os.path.isdir(os.path.split(new_file)[0]):
+            os.mkdir(os.path.split(new_file)[0])
+        if not os.path.exists(new_file):
+            shutil.copy(file, new_file)
+
