@@ -4,7 +4,7 @@ import shutil
 from converter import markdown_to_html_node, extract_title
 
 
-def generate_page(from_path, template_path, to_path):
+def generate_page(from_path, template_path, to_path, basepath):
     print(f'Generating page {from_path} to {to_path} using {template_path}')
 
     with open(from_path, 'r') as markdown_file:
@@ -17,13 +17,15 @@ def generate_page(from_path, template_path, to_path):
     title = extract_title(markdown)
     full_html = template.replace('{{ Title }}', title)
     full_html = full_html.replace('{{ Content }}', htmlstring)
+    full_html = full_html.replace('href="/', f'href="{basepath}')
+    full_html = full_html.replace('src="/', f'src="{basepath}')
     if not os.path.isdir(os.path.split(to_path)[0]):
         os.makedirs(os.path.split(to_path)[0], exist_ok=True)
 
     with open(to_path, 'w') as path_file:
         path_file.write(full_html)
 
-def generate_pages_recursive(from_path, template_path, to_path):
+def generate_pages_recursive(from_path, template_path, to_path, basepath):
     files = find_files(from_path)
     for file in files:
         if file.endswith('.md'):
@@ -40,7 +42,7 @@ def generate_pages_recursive(from_path, template_path, to_path):
             os.makedirs(os.path.dirname(output_path), exist_ok=True)
 
             # Generate the page
-            generate_page(file, template_path, output_path)
+            generate_page(file, template_path, output_path, basepath)
 
 def find_files(directory):
     files = []
