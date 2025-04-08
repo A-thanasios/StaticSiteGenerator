@@ -57,14 +57,14 @@ def find_files(directory):
 
 def make_public():
     # delete content of public
-    shutil.rmtree('./public/', ignore_errors=True)
+    shutil.rmtree('./docs/', ignore_errors=True)
     # copy whole directory static to public
     static_files = find_files('./static/')
 
-    os.mkdir('./public')
+    os.mkdir('./docs')
 
     for file in static_files:
-        new_file = f'./public/{file.split('./static/', 1)[1]}'
+        new_file = f'./docs/{file.split('./static/', 1)[1]}'
         if not os.path.isdir(os.path.split(new_file)[0]):
             os.mkdir(os.path.split(new_file)[0])
         if not os.path.exists(new_file):
